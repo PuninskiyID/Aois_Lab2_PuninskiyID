@@ -1,29 +1,32 @@
 ﻿#include <iostream>
 #include <vector>
 #include <set>
+#include <stack>
 
 using namespace std;
 
 class TruthTable 
 {
-	vector < vector <bool> > truthTable;
+	vector < vector <bool> > truthTable = {};
 	class Variable 
 	{
 		char simbol;
 		bool meaning;
 	};
 	set <Variable> plentyOfVariables;
-	const string trueMeaning = "t_";
-	const string falseMeaning = "f_";
-	const string andMeaning = "/\\";
-	const string orMeaning = "\\/";
-	const string implication = "->";
-	const string equivalence = "~~";
+	const string trueMeaning = "t";
+	const string falseMeaning = "f";
+	const string andMeaning = "+";
+	const string orMeaning = "*";
+	const string implication = "-";
 
 	int MaxBreacketSearch(string logicalFunc);
-	void SolveNukeFunc(string& logicalFunc, int index);
-	bool LogicalAnd(bool num1, bool num2);
-	void ReplaceNukeFunc(string& logicalFunc, int index, bool meaningToReplace);
+	void CalcTruthTable(string logicalFunc);
+	void Sum(stack <char> &StakOfVariables, stack <char> &StakOfOperations);
+	void Mult(stack <char>& StakOfVariables, stack <char>& StakOfOperations);
+	bool CheckPriority(stack <char> StakOfOperations, char newOperator);
+	void CalcBracket(stack <char>& StakOfVariables, stack <char>& StakOfOperations);
+	bool getBool(stack <char>& StakOfVariables);
 
 public:
 	TruthTable();
@@ -33,69 +36,101 @@ public:
 TruthTable::TruthTable()
 {
 }
-
 TruthTable::TruthTable(string logicalFunc)
 {
+	CalcTruthTable(logicalFunc);
 	
 }
 
-int TruthTable::MaxBreacketSearch(string logicalFunc)
+bool TruthTable::CheckPriority(stack<char> StakOfOperations, char newOperator)
 {
-	int maxBracketLevel = 0;
-	int bracketLevel = 0;
-	int startOfBracket = 0;
-	for (int i = 0; i < logicalFunc.size(); i++) 
+	if (StakOfOperations.top() == '(')
+		return true;
+	if (newOperator == '*')
+		if (StakOfOperations.top() != '+')
+			return false;
+	if (newOperator == '>')
+		if (StakOfOperations.top() != '+' || StakOfOperations.top() != '*')
+			return false;
+	if (newOperator == '=')
+		if (StakOfOperations.top() != '+' || StakOfOperations.top() != '*' || StakOfOperations.top() != '>')
+			return false;	
+	return true;
+}
+void TruthTable::Sum(stack <char> &StakOfVariables, stack <char> &StakOfOperations)
+{
+	bool firstVariable = getBool(StakOfVariables);
+	bool secondVariable = getBool(StakOfVariables);
+	if (firstVariable == true && secondVariable == true)
+		StakOfVariables.push('t');
+	else
+		StakOfVariables.push('f');
+	StakOfOperations.pop();
+	return;
+}
+void TruthTable::Mult(stack<char>& StakOfVariables, stack<char>& StakOfOperations)
+{
+	bool firstVariable = getBool(StakOfVariables);
+	bool secondVariable = getBool(StakOfVariables);
+	if (firstVariable == false && secondVariable == false)
+		StakOfVariables.push('f');
+	else
+		StakOfVariables.push('t');
+	StakOfOperations.pop();
+	return;
+}
+void TruthTable::CalcBracket(stack<char>& StakOfVariables, stack<char>& StakOfOperations)
+{
+	while (StakOfOperations.top() != '(')
+	{
+		if (StakOfOperations.top() == '+')
+			Sum(StakOfVariables, StakOfOperations);
+		else if (StakOfOperations.top() == '*')
+			Mult(StakOfVariables, StakOfOperations);
+	}
+	StakOfOperations.pop();
+}
+void TruthTable::CalcTruthTable(string logicalFunc)
+{
+	stack <char> StakOfVariables;
+	stack <char> StakOfOperations;
+	for (int i = 0; i < logicalFunc.size(); i++)
 	{
 		if (logicalFunc[i] == '(')
-			bracketLevel++;
-		if (logicalFunc[i] == ')')
-			bracketLevel--;
-		if (bracketLevel > maxBracketLevel)
-		{
-			maxBracketLevel = bracketLevel;
-			startOfBracket = i;
-		}
+			StakOfOperations.push(logicalFunc[i]);
+		else if (logicalFunc[i] == 't' || logicalFunc[i] == 'f')
+			StakOfVariables.push(logicalFunc[i]);
+		else if (logicalFunc[i] == '+')
+			if (CheckPriority(StakOfOperations, '+') == false)
+				Sum(StakOfVariables, StakOfOperations);
+			else
+				StakOfOperations.push(logicalFunc[i]);
+		else if (logicalFunc[i] == '*')
+			if (CheckPriority(StakOfOperations, '*') == false)
+				Mult(StakOfVariables, StakOfOperations);
+			else
+				StakOfOperations.push(logicalFunc[i]);
+		else if (logicalFunc[i] == ')')
+			CalcBracket(StakOfVariables, StakOfOperations);
 	}
-	return startOfBracket;
+	cout << StakOfVariables.top() << endl;
 }
-void TruthTable::SolveNukeFunc(string& logicalFunc, int index)
+bool TruthTable::getBool(stack <char>& StakOfVariables)
 {
-	index += 2;
-	bool num1 = false;
-	bool num2 = false;
-	if (logicalFunc[index - 2] == 't')
-		num1 = true;
-	if(logicalFunc[index + 2] == 't')
-		num2 = true;
-
-	if (logicalFunc[index] == '/' && logicalFunc[index + 1] == '\\')   //need more funcs
-		ReplaceNukeFunc(logicalFunc, index, LogicalAnd(num1, num2));
-
-}
-
-bool TruthTable::LogicalAnd(bool num1, bool num2)
-{
-	if (num1 && num2)
+	if (StakOfVariables.top() == 't')
+	{
+		StakOfVariables.pop();
 		return true;
-	return false;
-}
-
-void TruthTable::ReplaceNukeFunc(string& logicalFunc, int index, bool meaningToReplace)
-{
-	string output = "";
-	for (int i = 0; i < index; i++) 
-		output.push_back(logicalFunc[i]);
-	if (meaningToReplace == true)
-		output += "t_";
-	if (meaningToReplace == false)
-		output += "f_";
-	for (int i = index + 6; i < logicalFunc.size(); i++)
-		output.push_back(logicalFunc[i]);
-	logicalFunc = output;
+	}
+	else 
+	{
+		StakOfVariables.pop();
+		return false;
+	}
 }
 
 int main()
 {
-   
+	TruthTable a("(t+f*(t*t+t)*f)");
 }
 
