@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <vector>
 #include <set>
+#include <sstream>
 #include <stack>
 
 using namespace std;
@@ -26,13 +27,15 @@ class TruthTable
 	void AddOperation(stack <char>& StakOfVariables, stack <char>& StakOfOperations, char operation, string logicalFunc, int index);
 	string ReplaceVariables(string stringToReplace, string stringOfMeanings);
 	string BinaryPlusOne(string inString);
-	
+	int calcInDec(string binNum);
 
 public:
 	TruthTable();
 	TruthTable(string logicalFunc);
 	void SKNF();
+	void SKNFinNumForm();
 	void SDNF();
+	void SDNFinNumForm();
 };
 
 TruthTable::TruthTable()
@@ -272,6 +275,25 @@ void TruthTable::SKNF()
 	}
 	cout << output << endl;
 }
+void TruthTable::SKNFinNumForm()
+{
+	string output = "";
+	for (int i = 0; i < truthTable.size(); i++)
+	{
+		if (output == "")
+			output = "*(";
+		if (truthTable[i].back() == '1') 
+		{
+			if (output != "*(")
+				output += ',';
+			output += to_string(calcInDec(truthTable[i]));
+			
+		}
+		if (i == truthTable.size() - 1)
+			output += ')';
+	}
+	cout << output << endl;
+}
 void TruthTable::SDNF()
 {
 	string output = "";
@@ -298,11 +320,45 @@ void TruthTable::SDNF()
 	}
 	cout << output << endl;
 }
+void TruthTable::SDNFinNumForm()
+{
+	string output = "";
+	for (int i = 0; i < truthTable.size(); i++)
+	{
+		if (output == "")
+			output = "+(";
+		if (truthTable[i].back() == '0')
+		{
+			if (output != "+(")
+				output += ',';
+			output += to_string(calcInDec(truthTable[i]));
+
+		}
+		if (i == truthTable.size() - 1)
+			output += ')';
+	}
+	cout << output << endl;
+}
+int TruthTable::calcInDec(string binNum)
+{
+	float koeff = 1;
+	float buffer = 0;
+	float output = 0;
+	for (int i = binNum.size() - 2; i >= 0; i--)
+	{
+		buffer = binNum[i] - '0';
+		output += buffer * koeff;
+		koeff *= 2;
+	}
+	return output;
+}
 
 int main()
 {
 	TruthTable a("((A+B*(D*A+B)*D)>(-C))");
 	a.SKNF();
 	a.SDNF();
+	a.SKNFinNumForm();
+	a.SDNFinNumForm();
 }
 
